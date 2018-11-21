@@ -8,7 +8,6 @@ Info:
 '''
 
 import os
-import cv2
 import tensorflow as tf
 import numpy as np
 
@@ -18,7 +17,7 @@ from carla_loader import CarlaDataLoader
 
 class CarlaTraining():
 
-    def __init__(self):
+    def __init__(self, args):
         config_gpu = tf.ConfigProto()
         config_gpu.gpu_options.visible_device_list = '0'
         config_gpu.gpu_options.per_process_gpu_memory_fraction = 0.25
@@ -27,6 +26,9 @@ class CarlaTraining():
             + [0.5] * 1 + [0.5, 1.] * 5
         # self.dropout_vec = [1.0] * 8 + [1.0] * 2 + [1.0] * 2 \
         #     + [1.0] * 1 + [1.0, 1.0] * 5
+        self.branchConfig = [
+            ["Steer", "Gas", "Brake"], ["Steer", "Gas", "Brake"],
+            ["Steer", "Gas", "Brake"], ["Steer", "Gas", "Brake"], ["Speed"]]
 
         self.target_idx = 10
 
@@ -62,7 +64,7 @@ class CarlaTraining():
         # self.load_model()
 
         train_folder = "/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/SeqTrain"
-        test_folder = "/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/SeqTrain"
+        eval_folder = "/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/SeqTrain"
 
         with open("../carla_cil_dataset/AgentHuman/test_loader.txt", "r") as f:
             name_list = f.readlines()
@@ -70,7 +72,7 @@ class CarlaTraining():
         name_list = [item.split()[0] for item in name_list]
 
         self.loader = CarlaDataLoader(
-            sess, train_folder, name_list, eval_folder, name_list,
+            self.sess, train_folder, name_list, eval_folder, name_list,
             train_batch_size=5, eval_batch_size=5, sequnece_len=200)
 
         print("initialization over")
@@ -107,6 +109,7 @@ class CarlaTraining():
         input_speed = self._input_data[1]
 
         speed = np.array(target[:, self.speed_idx] / 90.0)
+        control_input = target[:]
 
         if control_input == 2 or control_input == 0.0:
             all_net = branches[0]
