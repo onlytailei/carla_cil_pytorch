@@ -40,7 +40,7 @@ image_cut = [115, 510]
 dropoutVec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 5
 prefSize = _image_size = (88, 200, 3)
 learningRate = 0.0002  # multiplied by 0.5 every 50000 mini batch
-iterNum = 294000
+iterNum = 60000
 beta1 = 0.7
 beta2 = 0.85
 # Control signal, int ( 2 Follow lane, 3 Left, 4 Right, 5 Straight)
@@ -254,10 +254,10 @@ with sessGraph.as_default():
                     sess.run(tf.global_variables_initializer())
                     saver.restore(sess, "test/model.ckpt")  # restore trained parameters
 
-                if steps % 294000 == 0 and steps != 0:
+                if steps % 60000 == 0 and steps != 0:
                     # finish the training
                     break
-            if steps % 294000 == 0 and steps != 0:
+            if steps % 60000 == 0 and steps != 0:
                 # finish the training
                 print('Finalize the training and Save Checkpoint ...')
                 if not os.path.exists(modelPath):
