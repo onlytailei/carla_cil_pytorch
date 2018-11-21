@@ -1,5 +1,4 @@
 import numpy as np
-
 import tensorflow as tf
 
 
@@ -9,7 +8,10 @@ def weight_ones(shape, name):
 
 
 def weight_xavi_init(shape, name):
-    initial = tf.get_variable(name=name, shape=shape, initializer=tf.contrib.layers.xavier_initializer())
+    initial = tf.get_variable(
+        name=name,
+        shape=shape,
+        initializer=tf.contrib.layers.xavier_initializer())
     return initial
 
 
