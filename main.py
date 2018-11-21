@@ -61,14 +61,14 @@ config.gpu_options.visible_device_list = '0'
 config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
 
 # read an example h5 file
-datasetDirTrain = '../carla_cil_dataset/AgentHuman/SeqTrain/'
-datasetDirVal = '../carla_cil_dataset/AgentHuman/SeqVal/'
+datasetDirTrain = '/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnnoon_h5'
+datasetDirVal = '/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_test/clearnoon_h5'
 
 # TODO tackle the training dataset
 datasetFilesTrain = glob.glob(datasetDirTrain+'*.h5')
 datasetFilesVal = glob.glob(datasetDirVal+'*.h5')
-print (len(datasetFilesTrain))
-print (len(datasetFilesVal))
+print(len(datasetFilesTrain))
+print(len(datasetFilesVal))
 
 config = tf.ConfigProto(allow_soft_placement=True)
 tf.reset_default_graph()
