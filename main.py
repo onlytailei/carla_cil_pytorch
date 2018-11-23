@@ -167,7 +167,7 @@ def main():
 
     carla_data = CarlaH5Data(
         train_folder=args.train_dir,
-        eval_folder=args.train_dir,
+        eval_folder=args.eval_dir,
         batch_size=args.batch_size,
         num_workers=args.workers)
 
