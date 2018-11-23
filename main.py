@@ -253,7 +253,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % args.print_freq == 0:
+        if i % args.print_freq == 0 or i == len(loader):
             writer.add_scalar('train/branch_loss', branch_losses.val, step+i)
             writer.add_scalar('train/speed_loss', speed_losses.val, step+i)
             writer.add_scalar('train/loss', losses.val, step+i)
@@ -303,7 +303,7 @@ def evaluate(loader, model, criterion, epoch, writer):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0:
+            if i % args.print_freq == 0 or i == len(loader):
                 writer.add_scalar('eval/loss', losses.val, step+i)
                 output_log(
                   'Test: [{0}/{1}]\t'
