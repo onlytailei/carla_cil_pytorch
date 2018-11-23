@@ -25,13 +25,17 @@ from tensorboardX import SummaryWriter
 
 from carla_net import CarlaNet
 from carla_loader import CarlaH5Data
-from helper import AverageMeter
+from helper import AverageMeter, save_checkpoint
 
 parser = argparse.ArgumentParser(description='Carla CIL training')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--batch_size', default=10, type=int, metavar='N',
                     help='batch size of training')
+parser.add_argument('--speed_weight', default=1, type=float,
+                    help='speed weight')
+parser.add_argument('--branch-weight', default=1, type=float,
+                    help='branch weight')
 parser.add_argument('--id', default="18101900", type=str)
 parser.add_argument('--train-dir', default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnoon_h5/",
                     type=str, metavar='PATH',
@@ -92,13 +96,14 @@ def main():
     global args
     args = parser.parse_args()
     log_dir = os.path.join("./", "logs", args.id)
+    run_dir = os.path.join("./", "runs", args.id)
     save_weight_dir = os.path.join("./save_models", args.id)
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(save_weight_dir, exist_ok=True)
 
     logging.basicConfig(filename=os.path.join(log_dir, "carla_training.log"),
                         level=logging.ERROR)
-    tsbd = SummaryWriter(log_dir=log_dir)
+    tsbd = SummaryWriter(log_dir=run_dir)
     log_args(logging)
     if args.seed is not None:
         random.seed(args.seed)
@@ -126,6 +131,10 @@ def main():
     model = CarlaNet()
     # criterion = EgoLoss()
     criterion = nn.MSELoss()
+
+    tsbd.add_graph(model,
+                   (torch.zeros(1, 3, 88, 200),
+                    torch.zeros(1, 1)))
 
     if args.gpu is not None:
         model = model.cuda(args.gpu)
@@ -169,7 +178,8 @@ def main():
     if args.evaluate:
         args.id = args.id+"_test"
         if not os.path.isfile(args.resume):
-            output_log("=> no checkpoint found at '{}'".format(args.resume), logging)
+            output_log("=> no checkpoint found at '{}'"
+                       .format(args.resume), logging)
             return
         # TODO here we should load test dataset
         if args.evaluate_log == "":
@@ -180,38 +190,39 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
         lr_scheduler.step()
-        loss = train(train_loader, model, criterion, optimizer, epoch)
-        # tsbd.add_scalar('data/train_loss', train_losses.avg, epoch)
-        # tsbd.add_scalar('data/train_iden_loss', train_iden_losses.avg, epoch)
-        # tsbd.add_scalar('data/train_t_loss', train_t_losses.avg, epoch)
-        #
-        # prec = validate(val_ego_loader, model, eval_criterion)
-        # tsbd.add_scalar('data/val_loss', prec, epoch)
-        #
-        # # remember best prec@1 and save checkpoint
-        # is_best = prec < best_prec
-        # best_prec = min(prec, best_prec)
-        # save_checkpoint(
-        #     {'epoch': epoch + 1,
-        #      'state_dict': model.state_dict(),
-        #      'best_prec': best_prec,
-        #      'optimizer': optimizer.state_dict()},
-        #     args.id,
-        #     is_best,
-        #     os.path.join(save_weight_dir, "{}_{}.pth.tar".format(epoch+1, args.id))
-        #     )
+        branch_losses, speed_losses, losses = \
+            train(train_loader, model, criterion, optimizer, epoch, tsbd)
+
+        prec = evaluate(eval_loader, model, criterion)
+
+        # remember best prec@1 and save checkpoint
+        is_best = prec < best_prec
+        best_prec = min(prec, best_prec)
+        save_checkpoint(
+            {'epoch': epoch + 1,
+             'state_dict': model.state_dict(),
+             'best_prec': best_prec,
+             'optimizer': optimizer.state_dict()},
+            args.id,
+            is_best,
+            os.path.join(
+                save_weight_dir,
+                "{}_{}.pth.tar".format(epoch+1, args.id))
+            )
 
 
-def train(loader, model, criterion, optimizer, epoch):
+def train(loader, model, criterion, optimizer, epoch, writer):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
+    branch_losses = AverageMeter()
+    speed_losses = AverageMeter()
 
     # switch to train mode
     model.train()
 
     end = time.time()
-
+    step = epoch * len(loader)
     for i, (img, speed, target, mask) in enumerate(loader):
         data_time.update(time.time() - end)
 
@@ -224,12 +235,15 @@ def train(loader, model, criterion, optimizer, epoch):
         branches_out, pred_speed = model(img, speed)
 
         mask_out = branches_out * mask
-        pred_loss = criterion(mask_out, target)
+        branch_loss = criterion(mask_out, target)
         speed_loss = criterion(pred_speed, speed)
 
-        loss = pred_loss + speed_loss
+        loss = args.branch_weight * branch_loss + \
+            args.speed_weight * speed_loss
 
         losses.update(loss.item(), args.batch_size)
+        branch_losses.update(branch_loss.item(), args.batch_size)
+        speed_losses.update(speed_loss.item(), args.batch_size)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -240,104 +254,112 @@ def train(loader, model, criterion, optimizer, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        # TODO log and tensorboard
-
         if i % args.print_freq == 0:
-            output_log('Epoch: [{0}][{1}/{2}]\t'
+            writer.add_scalar('train/branch_loss', branch_losses.val, step+i)
+            writer.add_scalar('train/speed_loss', speed_losses.val, step+i)
+            writer.add_scalar('train/loss', losses.val, step+i)
+            output_log(
+                'Epoch: [{0}][{1}/{2}]\t'
+                'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                'Branch loss {branch_loss.val:.3f} ({branch_loss.avg:.3f})\t'
+                'Speed loss {speed_loss.val:.3f} ({speed_loss.avg:.3f})\t'
+                'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                .format(
+                    epoch, i, len(loader), batch_time=batch_time,
+                    data_time=data_time, branch_loss=branch_losses,
+                    speed_loss=speed_losses, loss=losses), logging)
+
+        step += 1
+    return branch_losses.avg, speed_losses.avg, losses.avg
+
+
+def evaluate(loader, model, criterion):
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+
+    with torch.no_grad():
+        end = time.time()
+        for i, (img, speed, target, mask) in enumerate(loader):
+            img = img.cuda(args.gpu, non_blocking=True)
+            speed = speed.cuda(args.gpu, non_blocking=True)
+            target = target.cuda(args.gpu, non_blocking=True)
+            mask = mask.cuda(args.gpu, non_blocking=True)
+
+            branches_out, pred_speed = model(img, speed)
+
+            mask_out = branches_out * mask
+            branch_loss = criterion(mask_out, target)
+            speed_loss = criterion(pred_speed, speed)
+
+            loss = args.branch_weight * branch_loss + \
+                args.speed_weight * speed_loss
+
+            # measure accuracy and record loss
+            losses.update(loss.item(), args.batch_size)
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % args.print_freq == 0:
+                output_log(
+                  'Test: [{0}/{1}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Trans loss {t_loss.val:.3f} ({t_loss.avg:.3f})\t'
-                  'Iden loss {iden_loss.val:.3f} ({iden_loss.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
-                   epoch, i, len(loader), batch_time=batch_time,
-                   data_time=data_time, t_loss=t_losses, iden_loss=iden_losses,
-                   loss=losses), logging)
-    return t_losses, iden_losses, losses
-
-def validate(val_loader, model, criterion):
-    batch_time = AverageMeter()
-    losses = AverageMeter()
-
-    # switch to evaluate mode
-    model.eval()
-
-    with torch.no_grad():
-        end = time.time()
-        for i, (frame_0, frame_1, _) in enumerate(val_loader):
-            if args.gpu is not None:
-                for j in frame_0.keys():
-                    frame_0[j] = frame_0[j].cuda(args.gpu, non_blocking=True)
-                    frame_1[j] = frame_1[j].cuda(args.gpu, non_blocking=True)
-
-            # compute output
-            egomotions = model(
-                torch.cat([frame_0['lidar'], frame_1['lidar']],dim=0),
-                torch.cat([frame_1['lidar'], frame_0['lidar']],dim=0)
-                )
-
-            loss = criterion(
-                egomotions,
-                torch.cat([frame_0['ego'], frame_1['ego']],dim=0)
-                )
-
-            # measure accuracy and record loss
-            losses.update(loss.item(), args.batch_size)
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if i % args.print_freq == 0:
-                output_log('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
-                       i, len(val_loader), batch_time=batch_time, loss=losses), logging)
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  .format(
+                      i, len(loader), batch_time=batch_time,
+                      loss=losses), logging)
 
     return losses.avg
 
-def evaluate(eval_loader, model, criterion, eval_res_path):
-    batch_time = AverageMeter()
-    losses = AverageMeter()
 
-    # switch to evaluate mode
-    model.eval()
-    list_egomotions = []
-    with torch.no_grad():
-        end = time.time()
-        for i, (frame_0, frame_1, _) in enumerate(eval_loader):
-            if args.gpu is not None:
-                for j in frame_0.keys():
-                    frame_0[j] = frame_0[j].cuda(args.gpu, non_blocking=True)
-                    frame_1[j] = frame_1[j].cuda(args.gpu, non_blocking=True)
-
-            # compute output
-            egomotions = model(
-                torch.cat([frame_0['lidar'], frame_1['lidar']],dim=0),
-                torch.cat([frame_1['lidar'], frame_0['lidar']],dim=0)
-                )
-
-            loss = criterion(
-                egomotions,
-                torch.cat([frame_0['ego'], frame_1['ego']],dim=0)
-                )
-
-            # measure accuracy and record loss
-            losses.update(loss.item(), args.batch_size)
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-            list_egomotions += [ np.array2string(egomotions[i, ::].data.cpu().numpy(), formatter={'float_kind':lambda x: "%.4f" % x})[1:-1] for i in range(args.batch_size)]
-            if i % args.print_freq == 0:
-                output_log('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
-                       i, len(eval_loader), batch_time=batch_time, loss=losses), logging)
-
-    with open(eval_res_path, 'w') as f:
-        for _, line in enumerate(list_egomotions):
-            f.write(line+'\n')
-    return losses.avg
+# def evaluate(eval_loader, model, criterion, eval_res_path):
+#     batch_time = AverageMeter()
+#     losses = AverageMeter()
+#
+#     # switch to evaluate mode
+#     model.eval()
+#     list_egomotions = []
+#     with torch.no_grad():
+#         end = time.time()
+#         for i, (frame_0, frame_1, _) in enumerate(eval_loader):
+#             if args.gpu is not None:
+#                 for j in frame_0.keys():
+#                     frame_0[j] = frame_0[j].cuda(args.gpu, non_blocking=True)
+#                     frame_1[j] = frame_1[j].cuda(args.gpu, non_blocking=True)
+#
+#             # compute output
+#             egomotions = model(
+#                 torch.cat([frame_0['lidar'], frame_1['lidar']],dim=0),
+#                 torch.cat([frame_1['lidar'], frame_0['lidar']],dim=0)
+#                 )
+#
+#             loss = criterion(
+#                 egomotions,
+#                 torch.cat([frame_0['ego'], frame_1['ego']],dim=0)
+#                 )
+#
+#             # measure accuracy and record loss
+#             losses.update(loss.item(), args.batch_size)
+#
+#             # measure elapsed time
+#             batch_time.update(time.time() - end)
+#             end = time.time()
+#             list_egomotions += [ np.array2string(egomotions[i, ::].data.cpu().numpy(), formatter={'float_kind':lambda x: "%.4f" % x})[1:-1] for i in range(args.batch_size)]
+#             if i % args.print_freq == 0:
+#                 output_log('Test: [{0}/{1}]\t'
+#                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+#                       'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
+#                        i, len(eval_loader), batch_time=batch_time, loss=losses), logging)
+#
+#     with open(eval_res_path, 'w') as f:
+#         for _, line in enumerate(list_egomotions):
+#             f.write(line+'\n')
+#     return losses.avg
 
 if __name__ == '__main__':
     main()

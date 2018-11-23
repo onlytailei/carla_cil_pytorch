@@ -6,7 +6,11 @@ Date:Thu Nov 22 12:09:27 2018
 Info:
 '''
 
+import os
 import random
+import shutil
+
+import torch
 
 # original transformations
 # check: https://github.com/carla-simulator/imitation-learning/issues/1
@@ -59,7 +63,7 @@ class RandomTransWrapper(object):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
-    
+
     def __init__(self):
         self.reset()
 
@@ -74,3 +78,12 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+def save_checkpoint(state, is_best, id_, filename='checkpoint.pth.tar'):
+    torch.save(state, filename)
+    if is_best:
+        shutil.copyfile(
+            filename,
+            os.path.join("save_models", "{}_best.pth.tar".format(id_))
+            )
