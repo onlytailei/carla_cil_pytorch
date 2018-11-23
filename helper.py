@@ -4,14 +4,14 @@
 Author:Tai Lei
 Date:Thu Nov 22 12:09:27 2018
 Info:
-# https://github.com/carla-simulator/imitation-learning/issues/1
 '''
 
 import random
 
-from imgaug import augmenters as iaa
-
 # original transformations
+# check: https://github.com/carla-simulator/imitation-learning/issues/1
+
+# from imgaug import augmenters as iaa
 # st = lambda aug: iaa.Sometimes(0.4, aug)
 # oc = lambda aug: iaa.Sometimes(0.3, aug)
 # rl = lambda aug: iaa.Sometimes(0.09, aug)

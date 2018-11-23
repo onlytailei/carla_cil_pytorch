@@ -15,8 +15,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 from imgaug import augmenters as iaa
-# from helper import GaussianBlur, CoarseDropout, AdditiveGaussian, PixelDropout
-from helper import TransWrapper, RandomTransWrapper
+from helper import RandomTransWrapper
 
 
 class CarlaH5Data():
@@ -113,7 +112,6 @@ class CarlaH5Dataset(Dataset):
 
         with h5py.File(file_name, 'r') as h5_file:
             img = np.array(h5_file['rgb'])[file_idx]
-            # img = self.seq.augment_image(img)
             img = self.transform(img)
             target = np.array(h5_file['targets'])[file_idx]
             # Steer, Gas, Brake (0,1, focus on steer loss)
