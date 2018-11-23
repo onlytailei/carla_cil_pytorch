@@ -1,6 +1,7 @@
 *ipynb_checkpoints
 *.pyc
 __pycache__
+bk
 logs
 test
 runs
