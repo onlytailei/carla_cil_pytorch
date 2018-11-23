@@ -10,48 +10,32 @@ Info:
 import random
 
 from imgaug import augmenters as iaa
-from torchvision import transforms
 
-st = lambda aug: iaa.Sometimes(0.4, aug)
-oc = lambda aug: iaa.Sometimes(0.3, aug)
-rl = lambda aug: iaa.Sometimes(0.09, aug)
-seq = iaa.SomeOf((4, None), [
-        # blur images with a sigma between 0 and 1.5
-        rl(iaa.GaussianBlur((0, 1.5))),
-        # add gaussian noise to images
-        rl(iaa.AdditiveGaussianNoise(
-            loc=0,
-            scale=(0.0, 0.05),
-            per_channel=0.5)),
-        # randomly remove up to X% of the pixels
-        oc(iaa.Dropout((0.0, 0.10), per_channel=0.5)),
-        # randomly remove up to X% of the pixels
-        oc(iaa.CoarseDropout(
-            (0.0, 0.10), size_percent=(0.08, 0.2), per_channel=0.5)),
-        # change brightness of images (by -X to Y of original value)
-        oc(iaa.Add((-40, 40), per_channel=0.5)),
-        # change brightness of images (X-Y% of original value)
-        st(iaa.Multiply((0.10, 2.5), per_channel=0.2)),
-        # improve or worsen the contrast
-        rl(iaa.ContrastNormalization((0.5, 1.5), per_channel=0.5)),
-        # rl(iaa.Grayscale((0.0, 1))), # put grayscale
-], random_order=True)
-
-
-class GaussianBlur(object):
-    def __init__(self, small=0, big=1.5):
-        self.seq = iaa.GaussianBlur((small, big))
-
-    def __call__(self, img):
-        return self.seq.augment_image(img)
-
-
-class PixelDropout(object):
-    def __init__(self, small=0, big=1.5):
-        self.seq = iaa.Dropout((0.0, 0.10), per_channel=0.5)
-
-    def __call__(self, img):
-        return self.seq.augment_image(img)
+# original transformations
+# st = lambda aug: iaa.Sometimes(0.4, aug)
+# oc = lambda aug: iaa.Sometimes(0.3, aug)
+# rl = lambda aug: iaa.Sometimes(0.09, aug)
+# seq = iaa.SomeOf((4, None), [
+#         # blur images with a sigma between 0 and 1.5
+#         rl(iaa.GaussianBlur((0, 1.5))),
+#         # add gaussian noise to images
+#         rl(iaa.AdditiveGaussianNoise(
+#             loc=0,
+#             scale=(0.0, 0.05),
+#             per_channel=0.5)),
+#         # randomly remove up to X% of the pixels
+#         oc(iaa.Dropout((0.0, 0.10), per_channel=0.5)),
+#         # randomly remove up to X% of the pixels
+#         oc(iaa.CoarseDropout(
+#             (0.0, 0.10), size_percent=(0.08, 0.2), per_channel=0.5)),
+#         # change brightness of images (by -X to Y of original value)
+#         oc(iaa.Add((-40, 40), per_channel=0.5)),
+#         # change brightness of images (X-Y% of original value)
+#         st(iaa.Multiply((0.10, 2.5), per_channel=0.2)),
+#         # improve or worsen the contrast
+#         rl(iaa.ContrastNormalization((0.5, 1.5), per_channel=0.5)),
+#         # rl(iaa.Grayscale((0.0, 1))), # put grayscale
+# ], random_order=True)
 
 
 class TransWrapper(object):
@@ -70,13 +54,4 @@ class RandomTransWrapper(object):
     def __call__(self, img):
         if self.p < random.random():
             return img
-        return self.seq.augment_image(img)
-
-
-class AdditiveGaussian(object):
-    def __init__(self, small=0, big=1.5):
-        self.seq = iaa.AdditiveGaussianNoise(
-            loc=0, scale=(0.0, 0.05), per_channel=0.5)
-
-    def __call__(self, img):
         return self.seq.augment_image(img)
