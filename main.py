@@ -145,7 +145,7 @@ def main():
     optimizer = optim.Adam(
         model.parameters(), args.lr, betas=(0.7, 0.85))
     lr_scheduler = optim.lr_scheduler.StepLR(
-        optimizer, step_size=100, gamma=0.5)
+        optimizer, step_size=10, gamma=0.5)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -181,11 +181,11 @@ def main():
             output_log("=> no checkpoint found at '{}'"
                        .format(args.resume), logging)
             return
-        # TODO here we should load test dataset
         if args.evaluate_log == "":
             output_log("=> please set evaluate log path with --evaluate-log <log-path>")
-        evaluate(eval_loader, model, criterion,
-                 os.path.join(log_dir, args.evaluate_log))
+
+        # TODO add test func
+        evaluate(eval_loader, model, criterion, 0, tsbd)
         return
 
     for epoch in range(args.start_epoch, args.epochs):
