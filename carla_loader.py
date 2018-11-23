@@ -114,16 +114,19 @@ class CarlaH5Dataset(Dataset):
             img = np.array(h5_file['rgb'])[file_idx]
             img = self.transform(img)
             target = np.array(h5_file['targets'])[file_idx]
-            # Steer, Gas, Brake (0,1, focus on steer loss)
-            predict = target[:3]
-            # in km/h, <90
-            speed = target[10]/90
+            target = target.astype(np.float32)
             # 2 Follow lane, 3 Left, 4 Right, 5 Straight
-            command = int(target[24])
-            # 0 Follow lane, 1 Left, 2 Right, 3 Straight
-            one_hot = np.zeros(4,)
-            one_hot[command-2] = 1
+            # ->0 Follow lane, 1 Left, 2 Right, 3 Straight
+            command = int(target[24])-2
+            # Steer, Gas, Brake (0,1, focus on steer loss)
+            target_vec = np.zeros((4, 3), dtype=np.float32)
+            target_vec[command, :] = target[:3]
+            # in km/h, <90
+            speed = np.array([target[10]/90, ]).astype(np.float32)
+            mask_vec = np.zeros((4, 3), dtype=np.float32)
+            mask_vec[command, :] = 1
 
             # TODO
             # add preprocess
-        return img, speed, command, one_hot, predict
+        return img, speed, target_vec.reshape(-1), \
+            mask_vec.reshape(-1),

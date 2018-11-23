@@ -30,6 +30,8 @@ from helper import AverageMeter
 parser = argparse.ArgumentParser(description='Carla CIL training')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
+parser.add_argument('--batch_size', default=10, type=int, metavar='N',
+                    help='batch size of training')
 parser.add_argument('--id', default="18101900", type=str)
 parser.add_argument('--train-dir', default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnoon_h5/",
                     type=str, metavar='PATH',
@@ -123,7 +125,7 @@ def main():
 
     model = CarlaNet()
     # criterion = EgoLoss()
-    eval_criterion = nn.MSELoss()
+    criterion = nn.MSELoss()
 
     if args.gpu is not None:
         model = model.cuda(args.gpu)
@@ -158,10 +160,10 @@ def main():
         train_folder=args.train_dir,
         eval_folder=args.train_dir,
         batch_size=args.batch_size,
-        num_workers=args.workersj)
+        num_workers=args.workers)
 
-    train_loader = carla_data["train"]
-    eval_loader = carla_data["eval"]
+    train_loader = carla_data.loaders["train"]
+    eval_loader = carla_data.loaders["eval"]
     best_prec = math.inf
 
     if args.evaluate:
@@ -172,7 +174,7 @@ def main():
         # TODO here we should load test dataset
         if args.evaluate_log == "":
             output_log("=> please set evaluate log path with --evaluate-log <log-path>")
-        evaluate(eval_loader, model, eval_criterion,
+        evaluate(eval_loader, model, criterion,
                  os.path.join(log_dir, args.evaluate_log))
         return
 
@@ -210,24 +212,24 @@ def train(loader, model, criterion, optimizer, epoch):
 
     end = time.time()
 
-    for i, (img, speed, command, one_hot, predict) in enumerate(loader):
+    for i, (img, speed, target, mask) in enumerate(loader):
         data_time.update(time.time() - end)
 
-        if args.gpu is not None:
-                img = img.cuda(args.gpu, non_blocking=True)
-                speed = speed.cuda(args.gpu, non_blocking=True)
-                command = command.cuda(args.gpu, non_blocking=True)
-                one_hot = one_hot.cuda(args.gpu, non_blocking=True)
-                predict = predict.cuda(args.gpu, non_blocking=True)
+        # if args.gpu is not None:
+        img = img.cuda(args.gpu, non_blocking=True)
+        speed = speed.cuda(args.gpu, non_blocking=True)
+        target = target.cuda(args.gpu, non_blocking=True)
+        mask = mask.cuda(args.gpu, non_blocking=True)
 
-        prect,  = model()
+        branches_out, pred_speed = model(img, speed)
 
-        loss = args.sparse_weight * t_loss \
-                + args.iden_weight * iden_loss
+        mask_out = branches_out * mask
+        pred_loss = criterion(mask_out, target)
+        speed_loss = criterion(pred_speed, speed)
+
+        loss = pred_loss + speed_loss
 
         losses.update(loss.item(), args.batch_size)
-        t_losses.update(t_loss.item(), args.batch_size)
-        iden_losses.update(iden_loss.item(), args.batch_size)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -247,7 +249,7 @@ def train(loader, model, criterion, optimizer, epoch):
                   'Trans loss {t_loss.val:.3f} ({t_loss.avg:.3f})\t'
                   'Iden loss {iden_loss.val:.3f} ({iden_loss.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
-                   epoch, i, len(train_loader), batch_time=batch_time,
+                   epoch, i, len(loader), batch_time=batch_time,
                    data_time=data_time, t_loss=t_losses, iden_loss=iden_losses,
                    loss=losses), logging)
     return t_losses, iden_losses, losses

@@ -12,9 +12,8 @@ import torch.nn as nn
 
 
 class CarlaNet(nn.Module):
-    def __init__(self, dropout_vec):
+    def __init__(self, dropout_vec=None):
         super(CarlaNet, self).__init__()
-        self.dropout_vec = dropout_vec
         self.conv_block = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=5, stride=2),
             nn.BatchNorm2d(32),
@@ -96,16 +95,17 @@ class CarlaNet(nn.Module):
                 nn.Linear(256, 1),
             )
 
-    def forward(self, img, speed, one_hot):
+    def forward(self, img, speed):
         img = self.conv_block(img)
         img = img.view(-1, 8192)
         img = self.img_fc(img)
 
         speed = self.speed_fc(speed)
-        emb = torch.cat([img, speed],)
+        emb = torch.cat([img, speed], dim=1)
         emb = self.emb_fc(emb)
 
-        branches = [out(emb) for out in self.branches]
+        output = torch.cat([out(emb) for out in self.branches],
+                           dim=1)
         pred_speed = self.speed_branch(img)
 
-        return branches, pred_speed
+        return output, pred_speed

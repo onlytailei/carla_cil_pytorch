@@ -33,13 +33,13 @@ if DataLoaderTest:
     eval_loader = data.loaders["eval"]
 
     for i, (img, speed, command, one_hot, predict) in enumerate(train_loader):
-        show_img = make_grid(img)
-        plt.imshow((np.transpose(
-            show_img.numpy(),
-            (1, 2, 0))*255).astype(np.uint8))
-        plt.show()
+        #show_img = make_grid(img)
+        #plt.imshow((np.transpose(
+            #show_img.numpy(),
+            #(1, 2, 0))*255).astype(np.uint8))
+        #plt.show()
         # input()
-        # print(one_hot)
+        print(one_hot)
         if i == 60:
             break
 
