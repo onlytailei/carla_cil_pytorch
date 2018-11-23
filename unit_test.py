@@ -27,7 +27,7 @@ if DataLoaderTest:
             base_path,
             "chosen_weather_test/clearnoon_h5/"),
         batch_size=30,
-        num_workers=10)
+        num_workers=2)
 
     train_loader = data.loaders["train"]
     eval_loader = data.loaders["eval"]

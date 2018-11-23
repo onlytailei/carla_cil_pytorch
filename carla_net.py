@@ -51,7 +51,7 @@ class CarlaNet(nn.Module):
         )
 
         self.img_fc = nn.Sequential(
-                nn.Linear(size, 512),
+                nn.Linear(8192, 512),
                 nn.Dropout(0.3),
                 nn.ReLU(),
                 nn.Linear(512, 512),
@@ -98,10 +98,10 @@ class CarlaNet(nn.Module):
 
     def forward(self, img, speed, one_hot):
         img = self.conv_block(img)
+        img = img.view(-1, 8192)
         img = self.img_fc(img)
 
         speed = self.speed_fc(speed)
-
         emb = torch.cat([img, speed],)
         emb = self.emb_fc(emb)
 
