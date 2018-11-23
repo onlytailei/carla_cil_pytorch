@@ -10,7 +10,6 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-from torchvision.utils import make_grid
 
 DataLoaderTest = True
 
@@ -26,22 +25,25 @@ if DataLoaderTest:
         eval_folder=os.path.join(
             base_path,
             "chosen_weather_test/clearnoon_h5/"),
-        batch_size=30,
+        batch_size=200,
         num_workers=2)
 
     train_loader = data.loaders["train"]
     eval_loader = data.loaders["eval"]
 
-    for i, (img, speed, command, one_hot, predict) in enumerate(train_loader):
+    print(len(train_loader))
+    print(len(eval_loader))
+
+    # for i, (img, speed, command, one_hot, predict) in enumerate(train_loader):
         #show_img = make_grid(img)
         #plt.imshow((np.transpose(
             #show_img.numpy(),
             #(1, 2, 0))*255).astype(np.uint8))
         #plt.show()
         # input()
-        print(one_hot)
-        if i == 60:
-            break
+        # print(one_hot)
+        # if i == 60:
+        #     break
 
     # for i, (img, speed, command, predict) in enumerate(eval_loader):
     #     print(img.size())
