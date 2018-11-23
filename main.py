@@ -36,7 +36,7 @@ parser.add_argument('--speed_weight', default=1, type=float,
                     help='speed weight')
 parser.add_argument('--branch-weight', default=1, type=float,
                     help='branch weight')
-parser.add_argument('--id', default="18101900", type=str)
+parser.add_argument('--id', default="test", type=str)
 parser.add_argument('--train-dir', default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnoon_h5/",
                     type=str, metavar='PATH',
                     help='training dataset')
@@ -193,7 +193,7 @@ def main():
         branch_losses, speed_losses, losses = \
             train(train_loader, model, criterion, optimizer, epoch, tsbd)
 
-        prec = evaluate(eval_loader, model, criterion)
+        prec = evaluate(eval_loader, model, criterion, epoch, tsbd)
 
         # remember best prec@1 and save checkpoint
         is_best = prec < best_prec
@@ -207,7 +207,7 @@ def main():
             is_best,
             os.path.join(
                 save_weight_dir,
-                "{}_{}.pth.tar".format(epoch+1, args.id))
+                "{}_{}.pth".format(epoch+1, args.id))
             )
 
 
@@ -220,7 +220,6 @@ def train(loader, model, criterion, optimizer, epoch, writer):
 
     # switch to train mode
     model.train()
-
     end = time.time()
     step = epoch * len(loader)
     for i, (img, speed, target, mask) in enumerate(loader):
@@ -235,7 +234,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         branches_out, pred_speed = model(img, speed)
 
         mask_out = branches_out * mask
-        branch_loss = criterion(mask_out, target)
+        branch_loss = criterion(mask_out, target) * 4
         speed_loss = criterion(pred_speed, speed)
 
         loss = args.branch_weight * branch_loss + \
@@ -270,17 +269,16 @@ def train(loader, model, criterion, optimizer, epoch, writer):
                     data_time=data_time, branch_loss=branch_losses,
                     speed_loss=speed_losses, loss=losses), logging)
 
-        step += 1
     return branch_losses.avg, speed_losses.avg, losses.avg
 
 
-def evaluate(loader, model, criterion):
+def evaluate(loader, model, criterion, epoch, writer):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
-
+    step = epoch * len(loader)
     with torch.no_grad():
         end = time.time()
         for i, (img, speed, target, mask) in enumerate(loader):
@@ -292,7 +290,7 @@ def evaluate(loader, model, criterion):
             branches_out, pred_speed = model(img, speed)
 
             mask_out = branches_out * mask
-            branch_loss = criterion(mask_out, target)
+            branch_loss = criterion(mask_out, target) * 4
             speed_loss = criterion(pred_speed, speed)
 
             loss = args.branch_weight * branch_loss + \
@@ -306,6 +304,7 @@ def evaluate(loader, model, criterion):
             end = time.time()
 
             if i % args.print_freq == 0:
+                writer.add_scalar('eval/loss', losses.val, step+i)
                 output_log(
                   'Test: [{0}/{1}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -313,53 +312,8 @@ def evaluate(loader, model, criterion):
                   .format(
                       i, len(loader), batch_time=batch_time,
                       loss=losses), logging)
-
     return losses.avg
 
-
-# def evaluate(eval_loader, model, criterion, eval_res_path):
-#     batch_time = AverageMeter()
-#     losses = AverageMeter()
-#
-#     # switch to evaluate mode
-#     model.eval()
-#     list_egomotions = []
-#     with torch.no_grad():
-#         end = time.time()
-#         for i, (frame_0, frame_1, _) in enumerate(eval_loader):
-#             if args.gpu is not None:
-#                 for j in frame_0.keys():
-#                     frame_0[j] = frame_0[j].cuda(args.gpu, non_blocking=True)
-#                     frame_1[j] = frame_1[j].cuda(args.gpu, non_blocking=True)
-#
-#             # compute output
-#             egomotions = model(
-#                 torch.cat([frame_0['lidar'], frame_1['lidar']],dim=0),
-#                 torch.cat([frame_1['lidar'], frame_0['lidar']],dim=0)
-#                 )
-#
-#             loss = criterion(
-#                 egomotions,
-#                 torch.cat([frame_0['ego'], frame_1['ego']],dim=0)
-#                 )
-#
-#             # measure accuracy and record loss
-#             losses.update(loss.item(), args.batch_size)
-#
-#             # measure elapsed time
-#             batch_time.update(time.time() - end)
-#             end = time.time()
-#             list_egomotions += [ np.array2string(egomotions[i, ::].data.cpu().numpy(), formatter={'float_kind':lambda x: "%.4f" % x})[1:-1] for i in range(args.batch_size)]
-#             if i % args.print_freq == 0:
-#                 output_log('Test: [{0}/{1}]\t'
-#                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-#                       'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(
-#                        i, len(eval_loader), batch_time=batch_time, loss=losses), logging)
-#
-#     with open(eval_res_path, 'w') as f:
-#         for _, line in enumerate(list_egomotions):
-#             f.write(line+'\n')
-#     return losses.avg
 
 if __name__ == '__main__':
     main()
