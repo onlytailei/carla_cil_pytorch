@@ -199,9 +199,9 @@ def main():
         best_prec = min(prec, best_prec)
         save_checkpoint(
             {'epoch': epoch + 1,
-             'state_dict': model.cpu().state_dict(),
+             'state_dict': model.state_dict(),
              'best_prec': best_prec,
-             'optimizer': optimizer.cpu().state_dict()},
+             'optimizer': optimizer.state_dict()},
             args.id,
             is_best,
             os.path.join(
