@@ -116,7 +116,7 @@ class CarlaH5Dataset(Dataset):
             target = np.array(h5_file['targets'])[file_idx]
             target = target.astype(np.float32)
             # 2 Follow lane, 3 Left, 4 Right, 5 Straight
-            # ->0 Follow lane, 1 Left, 2 Right, 3 Straight
+            # -> 0 Follow lane, 1 Left, 2 Right, 3 Straight
             command = int(target[24])-2
             # Steer, Gas, Brake (0,1, focus on steer loss)
             target_vec = np.zeros((4, 3), dtype=np.float32)
