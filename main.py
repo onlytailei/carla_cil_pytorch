@@ -50,10 +50,6 @@ parser.add_argument('-b', '--batch-size', default=1, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
 parser.add_argument('--lr', '--learning-rate', default=2e-4, type=float,
                     metavar='LR', help='initial learning rate')
-parser.add_argument('--img-width', default=1216, type=int,
-                    help='initial learning rate')
-parser.add_argument('--img-height', default=368, type=int,
-                    help='initial learning rate')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int,

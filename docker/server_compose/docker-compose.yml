@@ -1,0 +1,22 @@
+version: '2.3'
+services:
+  training:
+    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    runtime: nvidia
+    volumes:
+      - /home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman:/home/dataset
+      - /home/tai/ws/ijrr_2018/carla_cil_training:/home/ws/carla_cil_training
+    working_dir: /home/ws/carla_cil_training
+    # cpu_count: 3
+    # mem_limit: 50000M
+    shm_size: 2000M
+    ports:
+      - 6007:6006
+    command:
+      python main.py
+      --batch-size 1000
+      --workers 6
+      --train-dir "/home/dataset/chosen_weather_train/rainnoon_h5/"
+      --eval-dir "/home/dataset/chosen_weather_test/rainnoon_h5/"
+      --gpu 0
+      --id localtest
