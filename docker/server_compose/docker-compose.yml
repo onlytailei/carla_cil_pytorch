@@ -34,7 +34,7 @@ services:
       --batch-size 1000
       --workers 16
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/wetnoon_h5/"
-      --eval-dir "/home/dataset/carla_cil/chosen_weather_test/wetnnoon_h5/"
+      --eval-dir "/home/dataset/carla_cil/chosen_weather_test/wetnoon_h5/"
       --gpu 1
       --id wet_policy
 
