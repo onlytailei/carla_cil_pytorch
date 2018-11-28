@@ -16,7 +16,7 @@ services:
       --workers 16
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/rainnoon_h5/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/rainnoon_h5/"
-      --gpu 0
+      --gpu 1
       --id rain_policy
 
   wet:
@@ -35,7 +35,7 @@ services:
       --workers 16
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/wetnoon_h5/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/wetnoon_h5/"
-      --gpu 1
+      --gpu 2
       --id wet_policy
 
   sunset:
@@ -54,5 +54,5 @@ services:
       --workers 16
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/sunset_h5/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/sunset_h5/"
-      --gpu 2
+      --gpu 3
       --id sunset_policy
