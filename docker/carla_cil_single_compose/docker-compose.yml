@@ -4,20 +4,19 @@ services:
     image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
     runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=1
+      - NVIDIA_VISIBLE_DEVICES=3
     volumes:
-      - /home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman:/home/dataset
-      - /home/tai/ws/ijrr_2018/carla_cil_training:/home/ws/carla_cil_training
+      - /data_shared/Docker/ltai/dataset:/home/dataset
+      - /data_shared/Docker/ltai/ws/carla_cil_training:/home/ws/carla_cil_training
     working_dir: /home/ws/carla_cil_training
-    cpu_count: 4
-    mem_reservation: 5000M
-    shm_size: 5000M
+    cpu_count: 20
+    mem_reservation: 10000M
+    shm_size: 10000M
     command:
       python main.py
       --batch-size 1000
-      --workers 8
-      --train-dir "/home/dataset/three_weather_train/"
-      --eval-dir "/home/dataset/three_weather_test/"
+      --workers 24
+      --train-dir "/home/dataset/carla_cil/chosen_weather_train/three_train/"
+      --eval-dir "/home/dataset/carla_cil/chosen_weather_test/three_test/"
       --gpu 0
-      --id three_policy
-
+      --id three_policy_138
