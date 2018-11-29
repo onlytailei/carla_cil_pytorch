@@ -1,0 +1,23 @@
+version: '2.3'
+services:
+  threeweather:
+    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=1
+    volumes:
+      - /home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman:/home/dataset
+      - /home/tai/ws/ijrr_2018/carla_cil_training:/home/ws/carla_cil_training
+    working_dir: /home/ws/carla_cil_training
+    cpu_count: 4
+    mem_reservation: 5000M
+    shm_size: 5000M
+    command:
+      python main.py
+      --batch-size 1000
+      --workers 8
+      --train-dir "/home/dataset/three_weather_train/"
+      --eval-dir "/home/dataset/three_weather_test/"
+      --gpu 0
+      --id three_policy
+
