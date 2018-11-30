@@ -152,6 +152,7 @@ def main():
             args.start_epoch = checkpoint['epoch']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
+            lr_scheduler.load_state_dict(checkpoint['scheduler'])
             output_log("=> loaded checkpoint '{}' (epoch {})"
                        .format(args.resume, checkpoint['epoch']), logging)
         else:
@@ -197,6 +198,7 @@ def main():
             {'epoch': epoch + 1,
              'state_dict': model.state_dict(),
              'best_prec': best_prec,
+             'scheduler': lr_scheduler.state_dict(),
              'optimizer': optimizer.state_dict()},
             args.id,
             is_best,
