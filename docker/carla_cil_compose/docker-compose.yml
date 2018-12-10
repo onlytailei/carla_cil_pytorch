@@ -1,0 +1,20 @@
+version: '2.3'
+services:
+  training:
+    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    runtime: nvidia
+    volumes:
+      - /path/to/AgentHuman:/home/dataset
+      - /path/to/carla_cil_training:/home/ws/carla_cil_training
+    working_dir: /home/ws/carla_cil_training
+    cpu_count: 8
+    mem_reservation: 10000M
+    shm_size: 10000M
+    command:
+      python main.py
+      --batch-size 1000
+      --workers 16
+      --train-dir "/home/dataset/SeqTrain/"
+      --eval-dir "/home/dataset/SeqVal/"
+      --gpu 1
+      --id rain_policy
