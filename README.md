@@ -20,7 +20,7 @@ $ python main.py --batch-size 1000 --workers 16
     --gpu 0
     --id training
 ```
-Check the training log through tensorboard
+Check the training log through tensorboard.
 ```
 $ tensorboard --logdir runs
 ```
