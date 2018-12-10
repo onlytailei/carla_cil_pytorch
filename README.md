@@ -35,7 +35,7 @@ $ docker-compose up -d
 ```
 We can still use tensorboard to check the log out of the docker.
 
-## dataset
+## Dataset
 Please check the original [dataset](https://github.com/carla-simulator/imitation-learning/blob/master/README.md) of Carla Imitation Learning.    
 Please check this [issue](https://github.com/carla-simulator/imitation-learning/issues/1) for data augmentation.
 
