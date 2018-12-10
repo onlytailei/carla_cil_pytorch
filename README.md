@@ -1,7 +1,7 @@
-# CARLA_CIL_Pytorch
+# carla_cil_pytorch
 ===============
 
-A pytorch implementation to train the conditional imitation learning policy in "End-to-end Driving via Conditional Imitation Learning" and "CARLA: An Open Urban Driving Simulator]".
+A pytorch implementation to train the conditional imitation learning policy in "End-to-end Driving via Conditional Imitation Learning" and "CARLA: An Open Urban Driving Simulator".
 
 ## Requirements
 -------
