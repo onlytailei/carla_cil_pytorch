@@ -17,4 +17,4 @@ services:
       --train-dir "/home/dataset/SeqTrain/"
       --eval-dir "/home/dataset/SeqVal/"
       --gpu 1
-      --id rain_policy
+      --id training
