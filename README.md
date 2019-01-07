@@ -40,7 +40,7 @@ Please check the original [dataset](https://github.com/carla-simulator/imitation
 Please check this [issue](https://github.com/carla-simulator/imitation-learning/issues/1) for data augmentation.
 
 ## Benchmark
-We will release our benchmark setups and results soon.
+Please reference https://github.com/onlytailei/carla_cil_pytorch_eval/blob/pytorch_eval/README.md
 
 ## Reference
 [carla-simulator/imitation-learning](https://github.com/carla-simulator/imitation-learning)    
