@@ -40,7 +40,7 @@ Please check the original [dataset](https://github.com/carla-simulator/imitation
 Please check this [issue](https://github.com/carla-simulator/imitation-learning/issues/1) for data augmentation.
 
 ## Benchmark
-Please reference [carla_cil_pytorch_eval](https://github.com/onlytailei/carla_cil_pytorch_eval/blob/pytorch_eval/README.md)
+Please reference [carla_cil_pytorch_eval](https://github.com/onlytailei/carla_cil_pytorch_eval/blob/pytorch_eval/README.md)    
 For the benchmark results, please check our RA-L paper [VR-Goggles for Robots: Real-to-sim Domain Adaptation for Visual Control](https://ram-lab.com/file/tailei/vr_goggles/index.html).
 
 ## Reference
