@@ -212,6 +212,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
+    ori_losses = AverageMeter()
     branch_losses = AverageMeter()
     speed_losses = AverageMeter()
 
@@ -231,17 +232,23 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         branches_out, pred_speed, log_var_control, log_var_speed = model(img,
                                                                          speed)
 
+        branch_square = torch.pow((branches_out - target), 2)
         branch_loss = torch.mean((torch.exp(-log_var_control)
-                                  * torch.pow((branches_out - target), 2)
+                                  * branch_square
                                   + log_var_control) * 0.5 * mask) * 4
 
+        speed_square = torch.pow((pred_speed - speed), 2)
         speed_loss = torch.mean((torch.exp(-log_var_speed)
-                                 * torch.pow((pred_speed - speed), 2)
+                                 * speed_square
                                  + log_var_speed) * 0.5)
 
-        loss = args.branch_weight * branch_loss + args.speed_weight * speed_loss
+        loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
+        with torch.no_grad():
+            ori_loss = args.branch_weight * torch.mean(branch_square*mask*4) \
+                    + args.speed_weight * torch.mean(speed_square)
 
         losses.update(loss.item(), args.batch_size)
+        ori_losses.update(ori_loss.item(), args.batch_size)
         branch_losses.update(branch_loss.item(), args.batch_size)
         speed_losses.update(speed_loss.item(), args.batch_size)
 
@@ -258,6 +265,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
             writer.add_scalar('train/branch_loss', branch_losses.val, step+i)
             writer.add_scalar('train/speed_loss', speed_losses.val, step+i)
             writer.add_scalar('train/loss', losses.val, step+i)
+            writer.add_scalar('train/ori_loss', ori_losses.val, step+i)
             output_log(
                 'Epoch: [{0}][{1}/{2}]\t'
                 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -265,10 +273,12 @@ def train(loader, model, criterion, optimizer, epoch, writer):
                 'Branch loss {branch_loss.val:.3f} ({branch_loss.avg:.3f})\t'
                 'Speed loss {speed_loss.val:.3f} ({speed_loss.avg:.3f})\t'
                 'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                'Ori Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
                 .format(
                     epoch, i, len(loader), batch_time=batch_time,
                     data_time=data_time, branch_loss=branch_losses,
-                    speed_loss=speed_losses, loss=losses), logging)
+                    speed_loss=speed_losses, loss=losses,
+                    ori_loss=ori_losses), logging)
 
     return branch_losses.avg, speed_losses.avg, losses.avg
 
@@ -303,8 +313,8 @@ def evaluate(loader, model, criterion, epoch, writer):
                                      * torch.pow((pred_speed - speed), 2)
                                      + log_var_speed) * 0.5)
 
-            loss = args.branch_weight * branch_loss + args.speed_weight * speed_loss
-            ori_loss = args.branch_weight * ori_branch_loss + args.speed_weight * ori_speed_loss
+            loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
+            ori_loss = args.branch_weight*ori_branch_loss+args.speed_weight*ori_speed_loss
 
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss
