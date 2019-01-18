@@ -228,14 +228,18 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         target = target.cuda(args.gpu, non_blocking=True)
         mask = mask.cuda(args.gpu, non_blocking=True)
 
-        branches_out, pred_speed = model(img, speed)
+        branches_out, pred_speed, log_var_control, log_var_speed = model(img,
+                                                                         speed)
 
-        mask_out = branches_out * mask
-        branch_loss = criterion(mask_out, target) * 4
-        speed_loss = criterion(pred_speed, speed)
+        branch_loss = torch.mean((torch.exp(-log_var_control)
+                                  * torch.pow((branches_out - target), 2)
+                                  + log_var_control) * 0.5 * mask) * 4
 
-        loss = args.branch_weight * branch_loss + \
-            args.speed_weight * speed_loss
+        speed_loss = torch.mean((torch.exp(-log_var_speed)
+                                 * torch.pow((pred_speed - speed), 2)
+                                 + log_var_speed) * 0.5)
+
+        loss = args.branch_weight * branch_loss + args.speed_weight * speed_loss
 
         losses.update(loss.item(), args.batch_size)
         branch_losses.update(branch_loss.item(), args.batch_size)
@@ -284,7 +288,7 @@ def evaluate(loader, model, criterion, epoch, writer):
             target = target.cuda(args.gpu, non_blocking=True)
             mask = mask.cuda(args.gpu, non_blocking=True)
 
-            branches_out, pred_speed = model(img, speed)
+            branches_out, pred_speed, _, _ = model(img, speed)
 
             mask_out = branches_out * mask
             branch_loss = criterion(mask_out, target) * 4
