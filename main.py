@@ -276,6 +276,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
 def evaluate(loader, model, criterion, epoch, writer):
     batch_time = AverageMeter()
     losses = AverageMeter()
+    ori_losses = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
@@ -288,31 +289,47 @@ def evaluate(loader, model, criterion, epoch, writer):
             target = target.cuda(args.gpu, non_blocking=True)
             mask = mask.cuda(args.gpu, non_blocking=True)
 
-            branches_out, pred_speed, _, _ = model(img, speed)
+            branches_out, pred_speed, log_var_control, log_var_speed = model(img, speed)
 
             mask_out = branches_out * mask
-            branch_loss = criterion(mask_out, target) * 4
-            speed_loss = criterion(pred_speed, speed)
+            ori_branch_loss = criterion(mask_out, target) * 4
+            ori_speed_loss = criterion(pred_speed, speed)
 
-            loss = args.branch_weight * branch_loss + \
-                args.speed_weight * speed_loss
+            branch_loss = torch.mean((torch.exp(-log_var_control)
+                                      * torch.pow((branches_out - target), 2)
+                                      + log_var_control) * 0.5 * mask) * 4
+
+            speed_loss = torch.mean((torch.exp(-log_var_speed)
+                                     * torch.pow((pred_speed - speed), 2)
+                                     + log_var_speed) * 0.5)
+
+            loss = args.branch_weight * branch_loss
+                   + args.speed_weight * speed_loss
+            ori_loss = args.branch_weight * ori_branch_loss
+                   + args.speed_weight * ori_speed_loss
+
+            # loss = args.branch_weight * branch_loss + \
+            #     args.speed_weight * speed_loss
 
             # measure accuracy and record loss
             losses.update(loss.item(), args.batch_size)
+            ori_losses.update(ori_loss.item(), args.batch_size)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
             if i % args.print_freq == 0 or i == len(loader):
-                writer.add_scalar('eval/loss', losses.val, step+i)
+                writer.add_scalar('eval/uncertain_loss', losses.val, step+i)
+                writer.add_scalar('eval/origin_loss', ori_losses.val, step+i)
                 output_log(
                   'Test: [{0}/{1}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Uncertain Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
                   .format(
                       i, len(loader), batch_time=batch_time,
-                      loss=losses), logging)
+                      loss=losses, ori_loss=ori_losses), logging)
     return losses.avg
 
 

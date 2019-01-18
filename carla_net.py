@@ -98,10 +98,8 @@ class CarlaNet(nn.Module):
         self.uncert_control_branches = nn.ModuleList([
             nn.Sequential(
                 nn.Linear(512, 256),
-                nn.Dropout(0.5),
                 nn.ReLU(),
                 nn.Linear(256, 256),
-                # nn.Dropout(self.dropout_vec[i*2+14]),
                 nn.ReLU(),
                 nn.Linear(256, 3),
             ) for i in range(4)
@@ -134,11 +132,9 @@ class CarlaNet(nn.Module):
 
         output = torch.cat([out(emb) for out in self.control_branches],
                            dim=1)
-
+        pred_speed = self.speed_branch(img)
         log_var_control = torch.cat(
             [un(emb) for un in self.uncert_control_branches], dim=1)
-
-        pred_speed = self.speed_branch(img)
         log_var_speed = self.uncert_speed_branch(img)
 
         return output, pred_speed, log_var_control, log_var_speed
