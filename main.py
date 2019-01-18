@@ -303,10 +303,8 @@ def evaluate(loader, model, criterion, epoch, writer):
                                      * torch.pow((pred_speed - speed), 2)
                                      + log_var_speed) * 0.5)
 
-            loss = args.branch_weight * branch_loss
-                   + args.speed_weight * speed_loss
-            ori_loss = args.branch_weight * ori_branch_loss
-                   + args.speed_weight * ori_speed_loss
+            loss = args.branch_weight * branch_loss + args.speed_weight * speed_loss
+            ori_loss = args.branch_weight * ori_branch_loss + args.speed_weight * ori_speed_loss
 
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss
