@@ -141,6 +141,7 @@ def main():
         model.parameters(), args.lr, betas=(0.7, 0.85))
     lr_scheduler = optim.lr_scheduler.StepLR(
         optimizer, step_size=10, gamma=0.5)
+    best_prec = math.inf
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -153,6 +154,7 @@ def main():
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             lr_scheduler.load_state_dict(checkpoint['scheduler'])
+            best_prec=checkpoint['best_prec']
             output_log("=> loaded checkpoint '{}' (epoch {})"
                        .format(args.resume, checkpoint['epoch']), logging)
         else:
@@ -169,7 +171,6 @@ def main():
 
     train_loader = carla_data.loaders["train"]
     eval_loader = carla_data.loaders["eval"]
-    best_prec = math.inf
 
     if args.evaluate:
         args.id = args.id+"_test"
