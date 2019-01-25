@@ -154,7 +154,7 @@ def main():
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             lr_scheduler.load_state_dict(checkpoint['scheduler'])
-            best_prec=checkpoint['best_prec']
+            best_prec = checkpoint['best_prec']
             output_log("=> loaded checkpoint '{}' (epoch {})"
                        .format(args.resume, checkpoint['epoch']), logging)
         else:
@@ -276,7 +276,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
                 'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                 'Ori Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
                 .format(
-                    epoch, i, len(loader), batch_time=batch_time,
+                    epoch+1, i, len(loader), batch_time=batch_time,
                     data_time=data_time, branch_loss=branch_losses,
                     speed_loss=speed_losses, loss=losses,
                     ori_loss=ori_losses), logging)
@@ -291,7 +291,6 @@ def evaluate(loader, model, criterion, epoch, writer):
 
     # switch to evaluate mode
     model.eval()
-    step = epoch * len(loader)
     with torch.no_grad():
         end = time.time()
         for i, (img, speed, target, mask) in enumerate(loader):
@@ -329,15 +328,15 @@ def evaluate(loader, model, criterion, epoch, writer):
             end = time.time()
 
             # if i % args.print_freq == 0 or i == len(loader):
-        writer.add_scalar('eval/uncertain_loss', uncertain_losses.val, step+i)
-        writer.add_scalar('eval/origin_loss', ori_losses.val, step+i)
+        writer.add_scalar('eval/uncertain_loss', uncertain_losses.val, epoch+1)
+        writer.add_scalar('eval/origin_loss', ori_losses.val, epoch+1)
         output_log(
-          'Test: [{0}/{1}]\t'
+          'Epoch Test: [{0}]\t'
           'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
           'Uncertain Loss {uncertain_loss.val:.4f} ({uncertain_loss.avg:.4f})\t'
           'Original Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
           .format(
-              i, len(loader), batch_time=batch_time,
+              epoch, batch_time=batch_time,
               uncertain_loss=uncertain_losses, ori_loss=ori_losses), logging)
     return ori_loss.avg
 
