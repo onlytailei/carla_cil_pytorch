@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   rain:
-    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     volumes:
       - /data_shared/Docker/ltai/dataset:/home/dataset
@@ -20,7 +20,7 @@ services:
       --id rain_policy
 
   wet:
-    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     volumes:
       - /data_shared/Docker/ltai/dataset:/home/dataset
@@ -39,7 +39,7 @@ services:
       --id wet_policy
 
   sunset:
-    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     volumes:
       - /data_shared/Docker/ltai/dataset:/home/dataset

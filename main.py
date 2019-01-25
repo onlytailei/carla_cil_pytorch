@@ -36,10 +36,12 @@ parser.add_argument('--speed_weight', default=1, type=float,
 parser.add_argument('--branch-weight', default=1, type=float,
                     help='branch weight')
 parser.add_argument('--id', default="test", type=str)
-parser.add_argument('--train-dir', default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnoon_h5/",
+parser.add_argument('--train-dir',
+                    default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_train/clearnoon_h5/",
                     type=str, metavar='PATH',
                     help='training dataset')
-parser.add_argument('--eval-dir', default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_test/clearnoon_h5/",
+parser.add_argument('--eval-dir',
+                    default="/home/tai/ws/ijrr_2018/carla_cil_dataset/AgentHuman/chosen_weather_test/clearnoon_h5/",
                     type=str, metavar='PATH',
                     help='evaluation dataset')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
@@ -313,8 +315,10 @@ def evaluate(loader, model, criterion, epoch, writer):
                                      * torch.pow((pred_speed - speed), 2)
                                      + log_var_speed) * 0.5)
 
-            uncertain_loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
-            ori_loss = args.branch_weight*ori_branch_loss+args.speed_weight*ori_speed_loss
+            uncertain_loss = args.branch_weight*branch_loss + \
+                    args.speed_weight*speed_loss
+            ori_loss = args.branch_weight*ori_branch_loss + \
+                    args.speed_weight*ori_speed_loss
 
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss

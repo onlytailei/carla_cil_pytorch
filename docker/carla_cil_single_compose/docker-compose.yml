@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   threeweather:
-    image: onlytailei/carla_cil:pytorch0.4.1-cuda9-oepcv3.4.3-imgaug
+    image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
@@ -18,9 +18,9 @@ services:
       --workers 24
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/three_train/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/three_test/"
-      --resume "46_three_policy_138_continue.pth"
       --gpu 0
       --id three_policy_138_continue
+      #--resume "46_three_policy_138_continue.pth"
 
 # docker run -p 6007:6006 -d -v /data_shared/Docker/ltai/ws/carla_cil_training/runs:/home/runs tensorflow/tensorflow:latest-py3 tensorboard --logdir /home/runs
 
