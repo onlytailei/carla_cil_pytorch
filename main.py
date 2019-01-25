@@ -29,8 +29,6 @@ from helper import AverageMeter, save_checkpoint
 parser = argparse.ArgumentParser(description='Carla CIL training')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
-parser.add_argument('--batch-size', default=10, type=int, metavar='N',
-                    help='batch size of training')
 parser.add_argument('--speed-weight', default=0.1, type=float,
                     help='speed weight')
 parser.add_argument('--branch-weight', default=1, type=float,
