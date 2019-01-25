@@ -286,7 +286,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
 
 def evaluate(loader, model, criterion, epoch, writer):
     batch_time = AverageMeter()
-    losses = AverageMeter()
+    uncertain_losses = AverageMeter()
     ori_losses = AverageMeter()
 
     # switch to evaluate mode
@@ -314,32 +314,32 @@ def evaluate(loader, model, criterion, epoch, writer):
                                      * torch.pow((pred_speed - speed), 2)
                                      + log_var_speed) * 0.5)
 
-            loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
+            uncertain_loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
             ori_loss = args.branch_weight*ori_branch_loss+args.speed_weight*ori_speed_loss
 
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss
 
             # measure accuracy and record loss
-            losses.update(loss.item(), args.batch_size)
+            uncertain_losses.update(uncertain_loss.item(), args.batch_size)
             ori_losses.update(ori_loss.item(), args.batch_size)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if i % args.print_freq == 0 or i == len(loader):
-                writer.add_scalar('eval/uncertain_loss', losses.val, step+i)
-                writer.add_scalar('eval/origin_loss', ori_losses.val, step+i)
-                output_log(
-                  'Test: [{0}/{1}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Uncertain Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
-                  .format(
-                      i, len(loader), batch_time=batch_time,
-                      loss=losses, ori_loss=ori_losses), logging)
-    return losses.avg
+            # if i % args.print_freq == 0 or i == len(loader):
+        writer.add_scalar('eval/uncertain_loss', uncertain_losses.val, step+i)
+        writer.add_scalar('eval/origin_loss', ori_losses.val, step+i)
+        output_log(
+          'Test: [{0}/{1}]\t'
+          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+          'Uncertain Loss {uncertain_loss.val:.4f} ({uncertain_loss.avg:.4f})\t'
+          'Original Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
+          .format(
+              i, len(loader), batch_time=batch_time,
+              uncertain_loss=uncertain_losses, ori_loss=ori_losses), logging)
+    return ori_loss.avg
 
 
 if __name__ == '__main__':
