@@ -48,7 +48,7 @@ parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=1, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
-parser.add_argument('--lr', '--learning-rate', default=2e-4, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
@@ -276,9 +276,9 @@ def train(loader, model, criterion, optimizer, epoch, writer):
             writer.add_scalar('train/uncertain_loss', uncertain_losses.val, step+i)
             writer.add_scalar('train/ori_loss', ori_losses.val, step+i)
             writer.add_scalar('train/control_uncertain',
-                              uncertain_control_means.val, epoch+1)
+                              uncertain_control_means.val, step+i)
             writer.add_scalar('train/speed_uncertain',
-                              uncertain_speed_means.val, epoch+1)
+                              uncertain_speed_means.val, step+i)
             output_log(
                 'Epoch: [{0}][{1}/{2}]\t'
                 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
