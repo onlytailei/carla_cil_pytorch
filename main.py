@@ -31,7 +31,7 @@ parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--batch_size', default=10, type=int, metavar='N',
                     help='batch size of training')
-parser.add_argument('--speed_weight', default=1, type=float,
+parser.add_argument('--speed_weight', default=0.1, type=float,
                     help='speed weight')
 parser.add_argument('--branch-weight', default=1, type=float,
                     help='branch weight')
@@ -214,10 +214,12 @@ def main():
 def train(loader, model, criterion, optimizer, epoch, writer):
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    losses = AverageMeter()
+    uncertain_losses = AverageMeter()
     ori_losses = AverageMeter()
     branch_losses = AverageMeter()
     speed_losses = AverageMeter()
+    uncertain_control_means = AverageMeter()
+    uncertain_speed_means = AverageMeter()
 
     # switch to train mode
     model.train()
@@ -245,19 +247,25 @@ def train(loader, model, criterion, optimizer, epoch, writer):
                                  * speed_square
                                  + log_var_speed) * 0.5)
 
-        loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
+        uncertain_loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
         with torch.no_grad():
             ori_loss = args.branch_weight * torch.mean(branch_square*mask*4) \
                     + args.speed_weight * torch.mean(speed_square)
+            uncertain_control_mean = torch.mean(log_var_control * mask * 4)
+            uncertain_speed_mean = torch.mean(log_var_speed)
 
-        losses.update(loss.item(), args.batch_size)
+        uncertain_losses.update(uncertain_loss.item(), args.batch_size)
         ori_losses.update(ori_loss.item(), args.batch_size)
         branch_losses.update(branch_loss.item(), args.batch_size)
         speed_losses.update(speed_loss.item(), args.batch_size)
+        uncertain_control_means.update(uncertain_control_mean.item(),
+                                       args.batch_size)
+        uncertain_speed_means.update(uncertain_speed_mean.item(),
+                                     args.batch_size)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        loss.backward()
+        uncertain_loss.backward()
         optimizer.step()
 
         # measure elapsed time
@@ -267,29 +275,42 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         if i % args.print_freq == 0 or i == len(loader):
             writer.add_scalar('train/branch_loss', branch_losses.val, step+i)
             writer.add_scalar('train/speed_loss', speed_losses.val, step+i)
-            writer.add_scalar('train/loss', losses.val, step+i)
+            writer.add_scalar('train/uncertain_loss', uncertain_losses.val, step+i)
             writer.add_scalar('train/ori_loss', ori_losses.val, step+i)
+            writer.add_scalar('train/control_uncertain',
+                              uncertain_control_means.val, epoch+1)
+            writer.add_scalar('train/speed_uncertain',
+                              uncertain_speed_means.val, epoch+1)
             output_log(
                 'Epoch: [{0}][{1}/{2}]\t'
                 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                 'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                 'Branch loss {branch_loss.val:.3f} ({branch_loss.avg:.3f})\t'
                 'Speed loss {speed_loss.val:.3f} ({speed_loss.avg:.3f})\t'
-                'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                'Uncertain Loss {uncertain_loss.val:.4f} ({uncertain_loss.avg:.4f})\t'
                 'Ori Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
+                'Control Uncertain {control_uncertain.val:.4f} ({control_uncertain.avg:.4f})\t'
+                'Speed Uncertain {speed_uncertain.val:.4f} ({speed_uncertain.avg:.4f})\t'
                 .format(
                     epoch+1, i, len(loader), batch_time=batch_time,
-                    data_time=data_time, branch_loss=branch_losses,
-                    speed_loss=speed_losses, loss=losses,
-                    ori_loss=ori_losses), logging)
+                    data_time=data_time,
+                    branch_loss=branch_losses,
+                    speed_loss=speed_losses,
+                    uncertain_loss=uncertain_losses,
+                    ori_loss=ori_losses,
+                    control_uncertain=uncertain_control_means,
+                    speed_uncertain=uncertain_speed_means
+                    ), logging)
 
-    return branch_losses.avg, speed_losses.avg, losses.avg
+    return branch_losses.avg, speed_losses.avg, uncertain_losses.avg
 
 
 def evaluate(loader, model, criterion, epoch, writer):
     batch_time = AverageMeter()
     uncertain_losses = AverageMeter()
     ori_losses = AverageMeter()
+    uncertain_control_means = AverageMeter()
+    uncertain_speed_means = AverageMeter()
 
     # switch to evaluate mode
     model.eval()
@@ -320,12 +341,19 @@ def evaluate(loader, model, criterion, epoch, writer):
             ori_loss = args.branch_weight*ori_branch_loss + \
                     args.speed_weight*ori_speed_loss
 
+            uncertain_control_mean = torch.mean(log_var_control * mask * 4)
+            uncertain_speed_mean = torch.mean(log_var_speed)
+
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss
 
             # measure accuracy and record loss
             uncertain_losses.update(uncertain_loss.item(), args.batch_size)
             ori_losses.update(ori_loss.item(), args.batch_size)
+            uncertain_control_means.update(uncertain_control_mean.item(),
+                                           args.batch_size)
+            uncertain_speed_means.update(uncertain_speed_mean.item(),
+                                         args.batch_size)
 
             # measure elapsed time
             batch_time.update(time.time() - end)
@@ -334,14 +362,24 @@ def evaluate(loader, model, criterion, epoch, writer):
             # if i % args.print_freq == 0 or i == len(loader):
         writer.add_scalar('eval/uncertain_loss', uncertain_losses.val, epoch+1)
         writer.add_scalar('eval/origin_loss', ori_losses.val, epoch+1)
+        writer.add_scalar('eval/control_uncertain',
+                          uncertain_control_means.val, epoch+1)
+        writer.add_scalar('eval/speed_uncertain',
+                          uncertain_speed_means.val, epoch+1)
         output_log(
           'Epoch Test: [{0}]\t'
           'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
           'Uncertain Loss {uncertain_loss.val:.4f} ({uncertain_loss.avg:.4f})\t'
           'Original Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
+          'Control Uncertain {control_uncertain.val:.4f} ({control_uncertain.avg:.4f})\t'
+          'Speed Uncertain {speed_uncertain.val:.4f} ({speed_uncertain.avg:.4f})\t'
           .format(
               epoch, batch_time=batch_time,
-              uncertain_loss=uncertain_losses, ori_loss=ori_losses), logging)
+              uncertain_loss=uncertain_losses,
+              ori_loss=ori_losses,
+              control_uncertain=uncertain_control_means,
+              speed_uncertain=uncertain_speed_means,
+              ), logging)
     return ori_loss.avg
 
 
