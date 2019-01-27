@@ -50,6 +50,10 @@ parser.add_argument('-b', '--batch-size', default=1, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     metavar='LR', help='initial learning rate')
+parser.add_argument('--lr-step', default=10, type=int,
+                    help='learning rate step size')
+parser.add_argument('--lr-gamma', default=0.5, type=float,
+                    help='learning rate gamma')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int,
@@ -140,7 +144,7 @@ def main():
     optimizer = optim.Adam(
         model.parameters(), args.lr, betas=(0.7, 0.85))
     lr_scheduler = optim.lr_scheduler.StepLR(
-        optimizer, step_size=10, gamma=0.5)
+        optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
     best_prec = math.inf
 
     # optionally resume from a checkpoint
@@ -249,8 +253,8 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         with torch.no_grad():
             ori_loss = args.branch_weight * torch.mean(branch_square*mask*4) \
                     + args.speed_weight * torch.mean(speed_square)
-            uncertain_control_mean = torch.mean(log_var_control * mask * 4)
-            uncertain_speed_mean = torch.mean(log_var_speed)
+            uncertain_control_mean = torch.mean(torch.exp(log_var_control) * mask * 4)
+            uncertain_speed_mean = torch.mean(torch.exp(log_var_speed))
 
         uncertain_losses.update(uncertain_loss.item(), args.batch_size)
         ori_losses.update(ori_loss.item(), args.batch_size)
@@ -339,8 +343,8 @@ def evaluate(loader, model, criterion, epoch, writer):
             ori_loss = args.branch_weight*ori_branch_loss + \
                     args.speed_weight*ori_speed_loss
 
-            uncertain_control_mean = torch.mean(log_var_control * mask * 4)
-            uncertain_speed_mean = torch.mean(log_var_speed)
+            uncertain_control_mean = torch.mean(torch.exp(log_var_control) * mask * 4)
+            uncertain_speed_mean = torch.mean(torch.exp(log_var_speed))
 
             # loss = args.branch_weight * branch_loss + \
             #     args.speed_weight * speed_loss
@@ -378,7 +382,7 @@ def evaluate(loader, model, criterion, epoch, writer):
               control_uncertain=uncertain_control_means,
               speed_uncertain=uncertain_speed_means,
               ), logging)
-    return ori_loss.avg
+    return ori_losses.avg
 
 
 if __name__ == '__main__':
