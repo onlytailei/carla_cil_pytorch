@@ -190,9 +190,11 @@ class CarlaNet(nn.Module):
 
         if self.structure == 4:
             pred_control = torch.cat(
-                [out(emb) for out in self.control_branches], dim=1)
+                [out(emb).unsqueeze(1) for out in self.control_branches], dim=1)
             pred_speed = self.speed_branch(img)
-            pred_control, log_var_control = torch.chunk(pred_control, 2, dim=1)
+            pred_control, log_var_control = torch.chunk(pred_control, 2, dim=2)
+            pred_control = pred_control.view(-1, 12)
+            log_var_control = log_var_control.view(-1, 12)
             pred_speed, log_var_speed = torch.chunk(pred_speed, 2, dim=1)
 
         return pred_control, pred_speed, log_var_control, log_var_speed
