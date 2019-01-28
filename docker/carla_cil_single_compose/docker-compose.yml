@@ -16,13 +16,13 @@ services:
       python main.py
       --batch-size 1000
       --workers 24
-      --speed-weight 0.01
-      --learning-rate 0.00005
+      --speed-weight 0.1
+      --learning-rate 0.0001
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/three_train/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/three_test/"
       --net-structure 3
       --gpu 0
-      --id three_policy_structure_3
+      --id three_policy_0128
       #--resume "46_three_policy_138_continue.pth"
 
 # docker run -p 6007:6006 -d -v /data_shared/Docker/ltai/ws/carla_cil_training/runs:/home/runs tensorflow/tensorflow:latest-py3 tensorboard --logdir /home/runs
