@@ -242,34 +242,43 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         target = target.cuda(args.gpu, non_blocking=True)
         mask = mask.cuda(args.gpu, non_blocking=True)
 
-        branches_out, pred_speed, log_var_control, log_var_speed = model(img,
-                                                                         speed)
+        if args.net_structure != 1:
+            branches_out, pred_speed, log_var_control, log_var_speed = model(img,
+                                                                             speed)
 
-        branch_square = torch.pow((branches_out - target), 2)
-        branch_loss = torch.mean((torch.exp(-log_var_control)
-                                  * branch_square
-                                  + log_var_control) * 0.5 * mask) * 4
+            branch_square = torch.pow((branches_out - target), 2)
+            branch_loss = torch.mean((torch.exp(-log_var_control)
+                                      * branch_square
+                                      + log_var_control) * 0.5 * mask) * 4
 
-        speed_square = torch.pow((pred_speed - speed), 2)
-        speed_loss = torch.mean((torch.exp(-log_var_speed)
-                                 * speed_square
-                                 + log_var_speed) * 0.5)
+            speed_square = torch.pow((pred_speed - speed), 2)
+            speed_loss = torch.mean((torch.exp(-log_var_speed)
+                                     * speed_square
+                                     + log_var_speed) * 0.5)
 
-        uncertain_loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
-        with torch.no_grad():
-            ori_loss = args.branch_weight * torch.mean(branch_square*mask*4) \
-                    + args.speed_weight * torch.mean(speed_square)
-            uncertain_control_mean = torch.mean(torch.exp(log_var_control) * mask * 4)
-            uncertain_speed_mean = torch.mean(torch.exp(log_var_speed))
+            uncertain_loss = args.branch_weight*branch_loss+args.speed_weight*speed_loss
+            with torch.no_grad():
+                ori_loss = args.branch_weight * torch.mean(branch_square*mask*4) \
+                        + args.speed_weight * torch.mean(speed_square)
+                uncertain_control_mean = torch.mean(torch.exp(log_var_control) * mask * 4)
+                uncertain_speed_mean = torch.mean(torch.exp(log_var_speed))
+
+                ori_losses.update(ori_loss.item(), args.batch_size)
+                uncertain_control_means.update(uncertain_control_mean.item(),
+                                               args.batch_size)
+                uncertain_speed_means.update(uncertain_speed_mean.item(),
+                                             args.batch_size)
+
+        else:
+            branches_out, pred_speed = model(img, speed)
+            branch_loss = criterion(branches_out * mask, target) * 4
+            speed_loss = criterion(pred_speed, speed)
+            uncertain_loss = args.branch_weight * branch_loss \
+                + args.speed_weight * speed_loss
 
         uncertain_losses.update(uncertain_loss.item(), args.batch_size)
-        ori_losses.update(ori_loss.item(), args.batch_size)
         branch_losses.update(branch_loss.item(), args.batch_size)
         speed_losses.update(speed_loss.item(), args.batch_size)
-        uncertain_control_means.update(uncertain_control_mean.item(),
-                                       args.batch_size)
-        uncertain_speed_means.update(uncertain_speed_mean.item(),
-                                     args.batch_size)
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
