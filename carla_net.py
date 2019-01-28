@@ -156,7 +156,7 @@ class CarlaNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.xavier_uniform(
+                nn.init.xavier_uniform_(
                     m.weight)
                 m.bias.data.fill_(0.01)
 
