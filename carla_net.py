@@ -183,7 +183,7 @@ class CarlaNet(nn.Module):
                     [un(emb) for un in self.uncert_control_branches], dim=1)
             if self.structure == 3:
                 log_var_control = self.uncert_control_branches(emb)
-                log_var_control = torch.cat([log_var_control for _ in range[4]],
+                log_var_control = torch.cat([log_var_control for _ in range(4)],
                                             dim=1)
 
             log_var_speed = self.uncert_speed_branch(img)
