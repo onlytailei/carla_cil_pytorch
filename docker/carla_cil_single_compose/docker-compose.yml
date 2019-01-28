@@ -4,7 +4,7 @@ services:
     image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=2
     volumes:
       - /data_shared/Docker/ltai/dataset:/home/dataset
       - /data_shared/Docker/ltai/ws/carla_cil_training:/home/ws/carla_cil_training
@@ -14,8 +14,8 @@ services:
     shm_size: 10000M
     command:
       python main.py
-      --batch-size 1000
-      --workers 24
+      --batch-size 1
+      --workers 16
       --speed-weight 0.1
       --learning-rate 0.0001
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/three_train/"
