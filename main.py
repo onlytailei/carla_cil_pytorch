@@ -71,6 +71,12 @@ parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
 parser.add_argument('--gpu', default=None, type=int,
                     help='GPU id to use.')
+parser.add_argument('--net-structure', default=2, type=int,
+                    help='Network structure 1|2|3|4.')
+                    #  1 pure regression
+                    #  2 uncertainty separate branch
+                    #  3 uncertainty unify
+                    #  4 uncertainty under branch
 
 
 def output_log(output_str, logger=None):
@@ -127,7 +133,7 @@ def main():
                                 world_size=args.world_size,
                                 rank=0)
 
-    model = CarlaNet()
+    model = CarlaNet(args.net_structure)
     # criterion = EgoLoss()
     criterion = nn.MSELoss()
 
