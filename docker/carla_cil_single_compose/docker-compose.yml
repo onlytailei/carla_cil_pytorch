@@ -4,27 +4,27 @@ services:
     image: onlytailei/carla_cil:pytorch1.0-cuda10-oepcv3.4.3-imgaug
     runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=3
     volumes:
       - /data_shared/Docker/ltai/dataset:/home/dataset
       - /data_shared/Docker/ltai/ws/carla_cil_training:/home/ws/carla_cil_training
     working_dir: /home/ws/carla_cil_training
-    cpu_count: 4
+    cpu_count: 24
     mem_reservation: 10000M
     shm_size: 10000M
     command:
       python main.py
       --batch-size 1000
-      --workers 8
+      --workers 24
       --speed-weight 1
       --learning-rate 0.0001
       --lr-gamma 0.1
       --lr-step 10
       --train-dir "/home/dataset/carla_cil/chosen_weather_train/three_train/"
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/three_test/"
-      --net-structure 3
+      --net-structure 4
       --gpu 0
-      --id three_policy_0133
+      --id three_policy_0134
       #--resume "46_three_policy_138_continue.pth"
 
 # docker run -p 6007:6006 -d -v /data_shared/Docker/ltai/ws/carla_cil_training/runs:/home/runs tensorflow/tensorflow:latest-py3 tensorboard --logdir /home/runs
