@@ -12,7 +12,7 @@ import torch.nn as nn
 
 
 class CarlaNet(nn.Module):
-    def __init__(self, structure=2, dropout_vec=None):
+    def __init__(self, dropout_vec=None):
         super(CarlaNet, self).__init__()
         self.conv_block = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=5, stride=2),
@@ -73,80 +73,99 @@ class CarlaNet(nn.Module):
                 nn.ReLU(),
             )
 
+        self.control_branches = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(512, 256),
+                nn.Dropout(0.5),
+                nn.ReLU(),
+                nn.Linear(256, 256),
+                # nn.Dropout(self.dropout_vec[i*2+14]),
+                nn.ReLU(),
+                nn.Linear(256, 3),
+            ) for i in range(4)
+        ])
+
+        self.speed_branch = nn.Sequential(
+                nn.Linear(512, 256),
+                nn.Dropout(0.5),
+                nn.ReLU(),
+                nn.Linear(256, 256),
+                # nn.Dropout(self.dropout_vec[1]),
+                nn.ReLU(),
+                nn.Linear(256, 1),
+            )
+
+    def forward(self, img, speed):
+        img = self.conv_block(img)
+        img = img.view(-1, 8192)
+        img = self.img_fc(img)
+
+        speed = self.speed_fc(speed)
+        emb = torch.cat([img, speed], dim=1)
+        emb = self.emb_fc(emb)
+
+        pred_control = torch.cat(
+            [out(emb) for out in self.control_branches], dim=1)
+        pred_speed = self.speed_branch(img)
+        return pred_control, pred_speed, img, emb
+
+
+class UncertainNet(nn.Module):
+    def __init__(self, structure=2, dropout_vec=None):
+        super(UncertainNet, self).__init__()
         self.structure = structure
-        if (self.structure < 1 or self.structure > 4):
-            raise("Structure must be one of 1|2|3|4")
-        elif (self.structure < 4):
-            self.control_branches = nn.ModuleList([
+
+        if (self.structure < 2 or self.structure > 3):
+            raise("Structure must be one of 2|3")
+
+        self.uncert_speed_branch = nn.Sequential(
+                nn.Linear(512, 256),
+                nn.ReLU(),
+                nn.Linear(256, 256),
+                nn.ReLU(),
+                nn.Linear(256, 1),
+            )
+        if self.structure == 2:
+            self.uncert_control_branches = nn.ModuleList([
                 nn.Sequential(
                     nn.Linear(512, 256),
-                    nn.Dropout(0.5),
                     nn.ReLU(),
                     nn.Linear(256, 256),
-                    # nn.Dropout(self.dropout_vec[i*2+14]),
                     nn.ReLU(),
                     nn.Linear(256, 3),
                 ) for i in range(4)
             ])
 
-            self.speed_branch = nn.Sequential(
+        if self.structure == 3:
+            self.uncert_control_branches = nn.Sequential(
                     nn.Linear(512, 256),
-                    nn.Dropout(0.5),
                     nn.ReLU(),
                     nn.Linear(256, 256),
-                    # nn.Dropout(self.dropout_vec[1]),
                     nn.ReLU(),
-                    nn.Linear(256, 1),
-                )
-            if self.structure != 1:
-                self.uncert_speed_branch = nn.Sequential(
-                        nn.Linear(512, 256),
-                        nn.ReLU(),
-                        nn.Linear(256, 256),
-                        nn.ReLU(),
-                        nn.Linear(256, 1),
-                    )
-                if self.structure == 2:
-                    self.uncert_control_branches = nn.ModuleList([
-                        nn.Sequential(
-                            nn.Linear(512, 256),
-                            nn.ReLU(),
-                            nn.Linear(256, 256),
-                            nn.ReLU(),
-                            nn.Linear(256, 3),
-                        ) for i in range(4)
-                    ])
+                    nn.Linear(256, 3),
+            )
 
-                if self.structure == 3:
-                    self.uncert_control_branches = nn.Sequential(
-                            nn.Linear(512, 256),
-                            nn.ReLU(),
-                            nn.Linear(256, 256),
-                            nn.ReLU(),
-                            nn.Linear(256, 3),
-                    )
-        elif self.structure == 4:
-            self.control_branches = nn.ModuleList([
-                nn.Sequential(
-                    nn.Linear(512, 256),
-                    nn.Dropout(0.5),
-                    nn.ReLU(),
-                    nn.Linear(256, 256),
-                    # nn.Dropout(self.dropout_vec[i*2+14]),
-                    nn.ReLU(),
-                    nn.Linear(256, 6),
-                ) for i in range(4)
-            ])
+    def forward(self, img_emb, emb):
+        if self.structure == 2:
+            log_var_control = torch.cat(
+                [un(emb) for un in self.uncert_control_branches], dim=1)
+        if self.structure == 3:
+            log_var_control = self.uncert_control_branches(emb)
+            log_var_control = torch.cat([log_var_control for _ in range(4)],
+                                        dim=1)
 
-            self.speed_branch = nn.Sequential(
-                    nn.Linear(512, 256),
-                    nn.Dropout(0.5),
-                    nn.ReLU(),
-                    nn.Linear(256, 256),
-                    # nn.Dropout(self.dropout_vec[1]),
-                    nn.ReLU(),
-                    nn.Linear(256, 2),
-                )
+        log_var_speed = self.uncert_speed_branch(img_emb)
+
+        return log_var_control, log_var_speed
+
+
+class FinalNet(nn.Module):
+    def __init__(self, structure=2, dropout_vec=None):
+        super(FinalNet, self).__init__()
+        self.structure = structure
+
+        self.carla_net = CarlaNet(dropout_vec=dropout_vec)
+        self.uncertain_net = UncertainNet(structure)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -161,40 +180,7 @@ class CarlaNet(nn.Module):
                 m.bias.data.fill_(0.01)
 
     def forward(self, img, speed):
-        img = self.conv_block(img)
-        img = img.view(-1, 8192)
-        img = self.img_fc(img)
-
-        speed = self.speed_fc(speed)
-        emb = torch.cat([img, speed], dim=1)
-        emb = self.emb_fc(emb)
-
-        # pure supervised regression
-        if self.structure < 4:
-            pred_control = torch.cat(
-                [out(emb) for out in self.control_branches], dim=1)
-            pred_speed = self.speed_branch(img)
-
-            if self.structure == 1:
-                return pred_control, pred_speed
-
-            if self.structure == 2:
-                log_var_control = torch.cat(
-                    [un(emb) for un in self.uncert_control_branches], dim=1)
-            if self.structure == 3:
-                log_var_control = self.uncert_control_branches(emb)
-                log_var_control = torch.cat([log_var_control for _ in range(4)],
-                                            dim=1)
-
-            log_var_speed = self.uncert_speed_branch(img)
-
-        if self.structure == 4:
-            pred_control = torch.cat(
-                [out(emb).unsqueeze(1) for out in self.control_branches], dim=1)
-            pred_speed = self.speed_branch(img)
-            pred_control, log_var_control = torch.chunk(pred_control, 2, dim=2)
-            pred_control = pred_control.contiguous().view(-1, 12)
-            log_var_control = log_var_control.contiguous().view(-1, 12)
-            pred_speed, log_var_speed = torch.chunk(pred_speed, 2, dim=1)
+        pred_control, pred_speed, img_emb, emb = self.carla_net(img, speed)
+        log_var_control, log_var_speed = self.uncertain_net(img_emb, emb)
 
         return pred_control, pred_speed, log_var_control, log_var_speed

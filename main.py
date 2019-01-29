@@ -22,7 +22,7 @@ import torch.distributed as dist
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 
-from carla_net import CarlaNet
+from carla_net import CarlaNet, FinalNet
 from carla_loader import CarlaH5Data
 from helper import AverageMeter, save_checkpoint
 
@@ -133,9 +133,12 @@ def main():
                                 world_size=args.world_size,
                                 rank=0)
 
-    model = CarlaNet(args.net_structure)
+    model = FinalNet(args.net_structure)
     # criterion = EgoLoss()
     criterion = nn.MSELoss()
+
+    model.carla_net.load_state_dict(
+        torch.load("./save_models/new_structure_best.pth")['state_dict'])
 
     tsbd.add_graph(model,
                    (torch.zeros(1, 3, 88, 200),
@@ -148,7 +151,7 @@ def main():
 
     # TODO check other papers optimizers
     optimizer = optim.Adam(
-        model.parameters(), args.lr, betas=(0.7, 0.85))
+        model.uncertain_net.parameters(), args.lr, betas=(0.7, 0.85))
     lr_scheduler = optim.lr_scheduler.StepLR(
         optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
     best_prec = math.inf
@@ -282,6 +285,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
+        model.zero_grad()
         uncertain_loss.backward()
         optimizer.step()
 
