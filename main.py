@@ -289,7 +289,7 @@ def train(loader, model, criterion, optimizer, epoch, writer):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % args.print_freq == 0 or i == len(loader):
+        if i % args.print_freq == 0 or i+1 == len(loader):
             writer.add_scalar('train/branch_loss', branch_losses.val, step+i)
             writer.add_scalar('train/speed_loss', speed_losses.val, step+i)
             writer.add_scalar('train/uncertain_loss', uncertain_losses.val, step+i)
@@ -377,19 +377,19 @@ def evaluate(loader, model, criterion, epoch, writer):
             end = time.time()
 
             # if i % args.print_freq == 0 or i == len(loader):
-        writer.add_scalar('eval/uncertain_loss', uncertain_losses.val, epoch+1)
-        writer.add_scalar('eval/origin_loss', ori_losses.val, epoch+1)
+        writer.add_scalar('eval/uncertain_loss', uncertain_losses.avg, epoch+1)
+        writer.add_scalar('eval/origin_loss', ori_losses.avg, epoch+1)
         writer.add_scalar('eval/control_uncertain',
-                          uncertain_control_means.val, epoch+1)
+                          uncertain_control_means.avg, epoch+1)
         writer.add_scalar('eval/speed_uncertain',
-                          uncertain_speed_means.val, epoch+1)
+                          uncertain_speed_means.avg, epoch+1)
         output_log(
           'Epoch Test: [{0}]\t'
-          'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-          'Uncertain Loss {uncertain_loss.val:.4f} ({uncertain_loss.avg:.4f})\t'
-          'Original Loss {ori_loss.val:.4f} ({ori_loss.avg:.4f})\t'
-          'Control Uncertain {control_uncertain.val:.4f} ({control_uncertain.avg:.4f})\t'
-          'Speed Uncertain {speed_uncertain.val:.4f} ({speed_uncertain.avg:.4f})\t'
+          'Time {batch_time.avg:.3f}\t'
+          'Uncertain Loss {uncertain_loss.avg:.4f}\t'
+          'Original Loss {ori_loss.avg:.4f}\t'
+          'Control Uncertain {control_uncertain.avg:.4f}\t'
+          'Speed Uncertain {speed_uncertain.avg:.4f}\t'
           .format(
               epoch, batch_time=batch_time,
               uncertain_loss=uncertain_losses,

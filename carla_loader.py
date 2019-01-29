@@ -50,6 +50,7 @@ class CarlaH5Dataset(Dataset):
                  train_eval_flag="train", sequence_len=200):
         self.data_dir = data_dir
         self.data_list = glob.glob(data_dir+'*.h5')
+        self.data_list.sort()
         self.sequnece_len = sequence_len
         self.train_eval_flag = train_eval_flag
 
