@@ -391,7 +391,7 @@ def evaluate(loader, model, criterion, epoch, writer):
           'Control Uncertain {control_uncertain.avg:.4f}\t'
           'Speed Uncertain {speed_uncertain.avg:.4f}\t'
           .format(
-              epoch, batch_time=batch_time,
+              epoch+1, batch_time=batch_time,
               uncertain_loss=uncertain_losses,
               ori_loss=ori_losses,
               control_uncertain=uncertain_control_means,
