@@ -401,7 +401,7 @@ def evaluate(loader, model, criterion, epoch, writer):
               control_uncertain=uncertain_control_means,
               speed_uncertain=uncertain_speed_means,
               ), logging)
-    return ori_losses.avg
+    return uncertain_losses.avg
 
 
 if __name__ == '__main__':
