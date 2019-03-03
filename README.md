@@ -51,3 +51,6 @@ For the benchmark results, please check our RA-L paper [VR-Goggles for Robots: R
 [mvpcom/carlaILTrainer](https://github.com/mvpcom/carlaILTrainer)    
 [End-to-end Driving via Conditional Imitation Learning](https://arxiv.org/abs/1710.02410)    
 [CARLA: An Open Urban Driving Simulator](http://proceedings.mlr.press/v78/dosovitskiy17a/dosovitskiy17a.pdf)
+[VR-Goggles for Robots: Real-to-sim Domain Adaptation for Visual Control](https://ram-lab.com/file/tailei/vr_goggles/index.html)
+
+The code for **End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation** is on going.
