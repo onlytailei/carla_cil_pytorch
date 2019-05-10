@@ -4,7 +4,7 @@
 The pytorch implementation to train the uncertain aware imitation learning policy in "End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation".
 
 ## Requirements
-python 3.6
+python 3.6    
 pytorch > 0.4.0    
 tensorboardX    
 opencv    
@@ -58,7 +58,7 @@ For the benchmark results, please check our paper [End-to-end Driving Deploying 
 [mvpcom/carlaILTrainer](https://github.com/mvpcom/carlaILTrainer)    
 [End-to-end Driving via Conditional Imitation Learning](https://arxiv.org/abs/1710.02410)    
 [CARLA: An Open Urban Driving Simulator](http://proceedings.mlr.press/v78/dosovitskiy17a/dosovitskiy17a.pdf)    
-[VR-Goggles for Robots: Real-to-sim Domain Adaptation for Visual Control](https://ram-lab.com/file/tailei/vr_goggles/index.html)
+[VR-Goggles for Robots: Real-to-sim Domain Adaptation for Visual Control](https://ram-lab.com/file/tailei/vr_goggles/index.html)    
 [End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation](https://arxiv.org/abs/1903.00821)
 
 The code for original "End-to-end Driving via Conditional Imitation Learning" and "CARLA: An Open Urban Driving Simulator" is in the [master branch](https://github.com/onlytailei/carla_cil_pytorch/tree/master). In the paper VR-Goggles, we also used the original setup to train the policy.
