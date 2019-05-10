@@ -24,7 +24,7 @@ services:
       --eval-dir "/home/dataset/carla_cil/chosen_weather_test/three_test/"
       --net-structure 2
       --gpu 0
-      --id three_policy_0135
+      --id three_policy_0137
       #--resume "46_three_policy_138_continue.pth"
 
 # docker run -p 6007:6006 -d -v /data_shared/Docker/ltai/ws/carla_cil_training/runs:/home/runs tensorflow/tensorflow:latest-py3 tensorboard --logdir /home/runs
