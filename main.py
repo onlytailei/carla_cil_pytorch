@@ -134,7 +134,6 @@ def main():
                                 rank=0)
 
     model = FinalNet(args.net_structure)
-    # criterion = EgoLoss()
     criterion = nn.MSELoss()
 
     model.carla_net.load_state_dict(
@@ -149,7 +148,6 @@ def main():
     else:
         model = torch.nn.DataParallel(model).cuda()
 
-    # TODO check other papers optimizers
     optimizer = optim.Adam(
         model.uncertain_net.parameters(), args.lr, betas=(0.7, 0.85))
     lr_scheduler = optim.lr_scheduler.StepLR(
@@ -194,7 +192,6 @@ def main():
         if args.evaluate_log == "":
             output_log("=> please set evaluate log path with --evaluate-log <log-path>")
 
-        # TODO add test func
         evaluate(eval_loader, model, criterion, 0, tsbd)
         return
 
@@ -365,10 +362,6 @@ def evaluate(loader, model, criterion, epoch, writer):
             uncertain_control_mean = torch.mean(torch.exp(log_var_control) * mask * 4)
             uncertain_speed_mean = torch.mean(torch.exp(log_var_speed))
 
-            # loss = args.branch_weight * branch_loss + \
-            #     args.speed_weight * speed_loss
-
-            # measure accuracy and record loss
             uncertain_losses.update(uncertain_loss.item(), args.batch_size)
             ori_losses.update(ori_loss.item(), args.batch_size)
             uncertain_control_means.update(uncertain_control_mean.item(),
@@ -380,7 +373,6 @@ def evaluate(loader, model, criterion, epoch, writer):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            # if i % args.print_freq == 0 or i == len(loader):
         writer.add_scalar('eval/uncertain_loss', uncertain_losses.avg, epoch+1)
         writer.add_scalar('eval/origin_loss', ori_losses.avg, epoch+1)
         writer.add_scalar('eval/control_uncertain',

@@ -5,6 +5,7 @@ A pytorch implementation to train the conditional imitation learning policy in "
 
 ## Requirements
 -------
+python 3.6    
 pytorch > 0.4.0    
 tensorboardX    
 opencv    
