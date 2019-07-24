@@ -1,7 +1,7 @@
 # carla_cil_pytorch
 
 
-The pytorch implementation to train the uncertain aware imitation learning policy in "End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation".
+The pytorch implementation to train the uncertain aware imitation learning policy in "Visual-based Autonomous Driving Deployment from a Stochastic and Uncertainty-aware Perspective".
 
 ## Requirements
 python 3.6    
@@ -51,7 +51,7 @@ Please check this [issue](https://github.com/carla-simulator/imitation-learning/
 
 ## Benchmark
 Please reference [carla_cil_pytorch_eval](https://github.com/onlytailei/carla_cil_pytorch_eval/blob/pytorch_eval/README.md).    
-For the benchmark results, please check our paper [End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation](https://arxiv.org/abs/1903.00821).
+For the benchmark results, please check our paper [Visual-based Autonomous Driving Deployment from a Stochastic and Uncertainty-aware Perspective](https://arxiv.org/abs/1903.00821).
 
 ## Reference
 [carla-simulator/imitation-learning](https://github.com/carla-simulator/imitation-learning)    
@@ -59,7 +59,7 @@ For the benchmark results, please check our paper [End-to-end Driving Deploying 
 [End-to-end Driving via Conditional Imitation Learning](https://arxiv.org/abs/1710.02410)    
 [CARLA: An Open Urban Driving Simulator](http://proceedings.mlr.press/v78/dosovitskiy17a/dosovitskiy17a.pdf)    
 [VR-Goggles for Robots: Real-to-sim Domain Adaptation for Visual Control](https://ram-lab.com/file/tailei/vr_goggles/index.html)    
-[End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation](https://arxiv.org/abs/1903.00821)
+[Visual-based Autonomous Driving Deployment from a Stochastic and Uncertainty-aware Perspective](https://arxiv.org/abs/1903.00821)
 
 The code for original "End-to-end Driving via Conditional Imitation Learning" and "CARLA: An Open Urban Driving Simulator" is in the [master branch](https://github.com/onlytailei/carla_cil_pytorch/tree/master). In the paper VR-Goggles, we also used the original setup to train the policy.
 
