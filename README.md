@@ -65,10 +65,10 @@ The code for original "End-to-end Driving via Conditional Imitation Learning" an
 
 Please consider to cite our paper if thie repo helps:
 ```
-@article{tai2019end,
-  title={End-to-end Driving Deploying through Uncertainty-Aware Imitation Learning and Stochastic Visual Domain Adaptation},
+@inproceedings{tai2019visual,
   author={Tai, Lei and Yun, Peng and Chen, Yuying and Liu, Congcong and Ye, Haoyang and Liu, Ming},
-  journal={arXiv preprint arXiv:1903.00821},
+  title={Visual-based Autonomous Driving Deployment from a Stochastic and Uncertainty-aware Perspective},
+  booktitle={2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
   year={2019}
 }
 @ARTICLE{zhang2019vrgoggles,
